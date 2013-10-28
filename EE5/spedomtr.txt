@@ -1,0 +1,47 @@
+Task:         Speedometer
+Description:  Compute and display the current speed of the system based
+              on the timing of revolutions.
+Initial Step: Start
+Final Step:   -----
+
+
+Variables:
+   distance   fixed point
+              the distance traveled thus far
+   CIRCUM     fixed point  constant
+              circumference of the wheel
+   TIMESCALE  fixed point  constant
+              scale factor to convert distance to speedometer units
+
+
+Events:
+   RevolutionEvent  a revolution has occurred
+   TimeoutEvent     timer has timed out (time interval has occurred)
+
+
+Steps:
+
+   Start
+      Description: start the calculation of speed, counting how many
+                   revolutions occur between timer timeouts
+      Action:      distance <- 0.0
+                   PERFORM ResetTimer
+
+   Measure
+      Description: measure the speed by measuring the distance travelled
+                   (or counting revolutions) between timer timeouts
+      Action:      distance <- distance + CIRCUM
+
+   Display
+      Description: compute and display the current speed then get ready for
+                   the next speed calculation
+      Action:      PERFORM  Display(speed <- distance / TIMESCALE)
+                   distance <- 0.0
+
+
+Step Transitions:
+
+             RevolutionEvent    TimeoutEvent    Always
+Start            Measure           Display
+Measure          Measure           Display
+Display          Measure           Display

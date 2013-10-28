@@ -1,0 +1,459 @@
+Program:      Saturating Counter with Saturation Indicator
+
+Description:  This program counts the number of presses of two switches.  One
+              switch causes the counter to count up, the other to count down.
+              The counter starts at 500 and when it reaches either the minimum
+	      value (0) or the maximum value (999) it stays at that value.  If
+	      an attempt is made to go beyond those values (by activating the
+	      appropriate switch) the displayed value will blink at 1 Hz.  If
+	      switches are pressed to change the value in a "legal" direction
+	      (i.e. the count up switch is pressed when the value is saturated
+	      at 0) it will start counting up and stop blinking.  Note that
+	      this means the currently displayed value does not necessarily
+	      reflect the difference in the number of times each switch was
+	      pressed due to saturation.
+
+Revision History:  5 December 07  Glen George   Initial revision.
+
+
+
+Events:
+   CountDownEvent  the countdown switch was activated
+   CountUpEvent    the countup switch was activated
+
+
+
+Package:      Main
+Description:  Main package for the saturating counter.  It contains the main
+              foreground task.
+
+
+Task:         Saturating Counter
+Description:  Increment and/or decrement a counter between two limit values.
+              If the count goes above or below the limit values (999 and 0),
+              it saturates at the limit value.  If an attempt is made to move
+              past the limit values the displayed value will blink.  Thus
+              incrementing from the maximum value leaves it at the maximum
+              value and blinks the display.  Likewise decrementing from the
+              minimum value leaves it at the minimum value and blinks the
+	      display.  Once the counter is moved away from the minimum or
+	      maximum value it will stop blinking (if it was blinking).  The
+	      counter is initialized to the middle value (500) when the task
+              begins.  Note that the counter will momentarily display an
+              incorrect value after it goes out of range.  The duration should
+              be short enough so the incorrect value is never seen.
+Initial Step: Start
+Final Step:   -----
+
+
+Variables:
+   countValue  integer[0, 999]
+               current value of the counter, the range is the range of the
+               counter
+   INIT_VALUE  integer constant [500]
+               initial value for the counter
+
+
+Steps:
+
+   Start
+      Description: start the switch and display tasks and start the counter by
+                   initializing it to a middle value and displaying it
+      Action:      RUN  SwitchDownHandler
+                   RUN  SwitchUpHandler
+                   RUN  DisplayHandler
+                   countValue <- INIT_VALUE
+                   PERFORM  DisplayDecimal(countValue)
+
+   CountDown
+      Description: dounting down, decrement the counter watching for overflow
+      Action:      countValue--o
+                   PERFORM  DisplayDecimal(countValue)
+
+   SaturateLow
+      Description: counter has overflowed counting down, saturate at minimum
+                   value
+      Action:      countValue <- 0
+                   PERFORM  DisplayDecimal(countValue)
+
+   SaturateLowBlink
+      Description: counter is saturated counting down and still trying to
+                   count down, start blinking the display
+      Action:      PERFORM  DisplayBlink(TRUE)
+
+   SaturateLowOff
+      Description: counter is no longer saturated counting down, turn off
+                   blinking
+      Action:      PERFORM  DisplayBlink(FALSE)
+
+   CountUp
+      Description: counting up, increment the counter watching for overflow
+      Action:      countValue++o
+                   PERFORM  DisplayDecimal(countValue)
+
+   SaturateHigh
+      Description: counter has overflowed counting up, saturate at maximum
+                   value
+      Action:      countValue <- 999
+                   PERFORM  DisplayDecimal(countValue)
+
+   SaturateHighBlink
+      Description: counter is saturated counting up and still trying to count
+                   up, start blinking the display
+      Action:      PERFORM  DisplayBlink(TRUE)
+
+   SaturateHighOff
+      Description: counter is no longer saturated counting up, turn off
+                   blinking
+      Action:      PERFORM  DisplayBlink(FALSE)
+
+
+Step Transitions:
+
+                  CountDownEvent       CountUpEvent         OverflowEvent    Always
+Start               CountDown            CountUp
+CountDown           CountDown            CountUp             SaturateLow
+CountUp             CountDown            CountUp             SaturateHigh
+SaturateLow         SaturateLowBlink     CountUp
+SaturateLowBlink    SaturateLowBlink     SaturateLowOff
+SaturateLowOff                                                               CountUp
+SaturateHigh        CountDown            SaturateHighBlink    
+SaturateHighBlink   SaturateHighOff      SaturateHighBlink    
+SaturateHighOff                                                              CountDown
+
+
+
+
+Package:      Switch
+Description:  This package handles the count up and down switches.  It takes
+              care of debouncing the switches and signaling any other task
+              when a valid switch press has occurred.  There are also accessor
+              tasks if events are not used or ignored.
+
+
+Variables:
+   countUp        logical
+                  count up switch has been pressed
+   countDown      logical
+                  count down switch has been pressed
+   DEBOUNCE_TIME  integer constant [10]
+                  number of milliseconds a switch must be pressed before it is
+                  considered debounced
+
+
+
+Task:         SwitchDownHandler
+Description:  This task handles the count down switch input.  It periodically
+              reads the switch and debounces it, generating an event when the
+              switch is pressed and debounced.  No event is generated when the
+	      switch is released.
+Initial Step: Start
+Final Step:   -----
+
+
+Variables:
+   pressTime    integer[0, 99]
+                number of milliseconds until the switch is debounced and
+                considered pressed
+   switchState  logical
+                TRUE if the switch is pressed, FALSE if not.
+   switchDebnc  logical
+                TRUE if the switch is debounced, FALSE if not.
+
+
+Steps:
+
+   Start
+      Description: Initialize the switch to not pressed.  Then start
+                   debouncing it.
+      Action:      countDown <- FALSE
+
+   SwitchDown
+      Description: The switch is down.  Update the time for which it has been down.
+      Action:      pressTime--o
+
+   SwitchUp
+      Description: The switch is up.  Reset the time until it is debounced.
+      Action:      pressTime <- DEBOUNCE_TIME
+                   switchDebnc <- FALSE
+
+   SwitchPressed
+      Description: The switch is pressed.  Set the flags indicating we have a
+                   pressed switch and generate an event.
+      Action:      countDown <- TRUE
+                   switchDebnc <- TRUE
+                   generate CountDownEvent
+
+   SwitchStillDown
+      Description: The switch is still pressed.  Don't do anything.
+      Action:      ---
+
+   CheckSwitch
+      Description: Check if the switch is pressed or not.  Just read the
+                   current state of the switch.
+      Action:      PERFORM  ReadDownSwitch(switchState)
+
+
+Step Transitions:
+
+                  Timer1msEvent       OverflowEvent    Always
+Start                                                  SwitchUp
+SwitchUp            CheckSwitch
+SwitchDown          CheckSwitch       SwitchPressed
+SwitchPressed                                          SwitchStillDown
+SwitchStillDown     CheckSwitch
+
+
+                (switchState = TRUE) &    (switchState = TRUE) &
+                (switchDebnc = TRUE)       (switchDebnc = FALSE)     Otherwise
+CheckSwitch       SwitchStillDown              SwitchDown             SwitchUp
+
+
+
+Task:         SwitchUpHandler
+Description:  This task handles the count up switch input.  It assumes the
+              switch generates an event whenever it is pressed or released 
+              and uses that event and the timer event to debounce the switch,
+              generating an event when the switch is pressed and debounced.
+	      No event is generated when the switch is released.
+Initial Step: Start
+Final Step:   -----
+
+
+Variables:
+   pressTime    integer[0, 99]
+                number of milliseconds until the switch is debounced and
+                considered pressed
+
+
+Steps:
+
+   Start
+      Description: Initialize the switch to not pressed.  Then start
+                   debouncing it.
+      Action:      countUp <- FALSE
+
+   SwitchUp
+      Description: The switch is up.  Reset the time until it is debounced.
+      Action:      pressTime <- DEBOUNCE_TIME
+
+   SwitchDown
+      Description: The switch is down.  Update the time for which it has been down.
+      Action:      pressTime--o
+
+   SwitchPressed
+      Description: The switch is pressed.  Set the flags indicating we have a
+                   pressed switch and generate an event.
+      Action:      countUp <- TRUE
+                   generate CountUpEvent
+
+   SwitchStillDown
+      Description: The switch is still pressed.  Don't do anything.
+      Action:      ---
+
+
+Step Transitions:
+
+                 Timer1msEvent  SwitchPressEvent  SwitchReleaseEvent  OverflowEvent  Always
+Start                                                                                SwitchUp
+SwitchUp         SwitchUp        SwitchDown         SwitchUp
+SwitchDown       SwitchDown      SwitchDown         SwitchUp          SwitchPressed
+SwitchPressed                                                                        SwitchStillDown
+SwitchStillDown  SwitchStillDown SwitchStillDown    SwitchUp
+
+Note:  a SwitchPressEvent should never occur in the SwitchStillDown or
+       SwitchDown steps, but the transition is there just in case; similarly a
+       SwitchReleaseEvent should never occur in the SwitchUp step
+
+
+
+Task:         HaveCountDown
+Description:  This is an accessor task for the count down switch.  It sets the
+              passed parameter to TRUE if the count down switch has been
+              pressed and debounced since this task was last performed.
+Parameters:   flag:out  logical
+                        TRUE if the count down switch was pressed since the
+                        last time this task was performed, FALSE otherwise
+Initial Step: Start
+Final Step:   Start
+
+
+Variables:
+   None
+
+
+Steps:
+
+   Start
+      Description: Get the value of the countDown package variable into the
+                   parameter and reset the package variable.  This is done
+                   with a swap to avoid race conditions.
+      Action:      flag <- FALSE
+                   flag <-> countDown
+
+
+
+Task:         HaveCountUp
+Description:  This is an accessor task for the count up switch.  It sets the
+              passed parameter to TRUE if the count up switch has been
+              pressed and debounced since this task was last performed.
+Parameters:   flag:out  logical
+                        TRUE if the count up switch was pressed since the last
+                        time this task was performed, FALSE otherwise
+Initial Step: Start
+Final Step:   Start
+
+
+Variables:
+   None
+
+
+Steps:
+
+   Start
+      Description: Get the value of the countUp package variable into the
+                   parameter and reset the package variable.  This is done
+                   with a swap to avoid race conditions.
+      Action:      flag <- FALSE
+                   flag <-> countUp
+
+
+
+
+Package:      Display
+Description:  This package handles the display.  There are mutator tasks to
+              turn the blinking on and off, and to set the value to be
+	      displayed.
+
+
+Variables:
+   blink     logical
+             blink the display
+   value     integer[0, 999]
+             value to display
+
+
+
+Task:         DisplayHandler
+Description:  This task handles blinking the display.  If the blink package
+              variable is TRUE the display is blinked at 1 Hz.  If it is false
+              the display is not blinked.
+Initial Step: StartDisplayOn
+Final Step:   -----
+
+
+Variables:
+   displayCount  integer[0, 9999]
+                 number of milliseconds the display has been on or off when it
+                 is blinking
+   BLINK_RATE    integer constant [500]
+                 number of milliseconds to leave display on or off when it is
+                 blinking
+
+
+Steps:
+
+   StartDisplayOn
+      Description: Start turning on the display.  Set the value to be
+                   displayed and set the timer for how long it should be on.
+      Action:      PERFORM  Display(value)
+                   displayCount <- BLINK_RATE
+
+   DisplayOn
+      Description: Time how long the display has been on.  Always redisplay
+                   the value since it might have changed since we started
+                   displaying it (via the mutator task).
+      Action:      PERFORM  Display(value)
+                   displayCount--o
+
+   StartDisplayOff
+      Description: Start turning off the display for blinking.  Turn the 
+                   display off and set the timer for how long it should be
+                   off.
+      Action:      PERFORM  DisplayOff
+                   displayCount <- BLINK_RATE
+
+   DisplayOff
+      Description: Time how long the display has been off.
+      Action:      displayCount--o
+
+   CheckDisplayOn
+      Description: Check if the display should be blinking or not.  Just check
+                   the value of the blink flag.  This step is executed when
+                   the display is on.
+      Action:      ---
+
+   CheckDisplayOff
+      Description: Check if the display should be blinking or not.  Just check
+                   the value of the blink flag.  This step is executed when
+                   the display is off.
+      Action:      ---
+
+   KeepDisplayOn
+      Description: Want the display always on (no blinking) so reset display
+                   count to the blink rate so it never overflows.
+      Action:      displayCount <- BLINK_RATE
+
+   TurnDisplayOn
+      Description: Need the display to be on, set the display count to 0 so
+                   the next decrement it will turn on
+      Action:      displayCount <- 0
+
+
+
+Step Transitions:
+
+                    Timer1msEvent        OverflowEvent        Always
+StartDisplayOn                                               DisplayOn
+DisplayOn           CheckDisplayOn       StartDisplayOff
+StartDisplayOff                                              DisplayOff
+DisplayOff          CheckDisplayOff      StartDisplayOn
+
+
+                   blink = TRUE         Otherwise
+CheckDisplayOn      DisplayOn           KeepDisplayOn
+KeepDisplayOn                           DisplayOn
+CheckDisplayOff     DisplayOff          TurnDisplayOn
+TurnDisplayOn                           DisplayOff
+
+
+
+Task:         DisplayDecimal
+Description:  This is a mutator task for the display.  It sets the value to be
+              displayed to the passed parameter.
+Parameters:   v:in  integer[0, 999]
+                    value to be displayed
+Initial Step: Start
+Final Step:   Start
+
+
+Variables:
+   None
+
+
+Steps:
+
+   Start
+      Description: Set the value package variable to the parameter.
+      Action:      value <- v
+
+
+
+Task:         DisplayBlink
+Description:  This is a mutator task for the display.  It turns blinking on or
+              off based on the passed parameter.
+Parameters:   b:in  logical
+                    TRUE to turn blinking on, FALSE to turn it off
+Initial Step: Start
+Final Step:   Start
+
+
+Variables:
+   None
+
+
+Steps:
+
+   Start
+      Description: Set the blink package variable to the parameter.
+      Action:      blink <- b

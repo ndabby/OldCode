@@ -1,0 +1,51 @@
+Task:         GCD
+Description:  Compute the GCD of the passed parameters using Euclid's
+              Algorithm
+Initial Step: CheckParams
+Final Step:   Done
+
+
+Parameters:
+   a    integer   in
+        one value for which to compute the GCD
+   b    integer   in
+        second value for which to compute the GCD
+   GCD  integer   out
+        result - the GCD of a and b, 0 if a or b is non-positive
+
+
+Steps:
+
+   CheckParams
+      Description: check the parameters for valid values and initialize
+                   the result (GCD) to 0, the error value
+      Action:      GCD <- 0
+
+   Compute
+      Description: compute one step of the GCD algorithm, reducing the
+                   larger value (a) by the smaller value (b)
+      Action:      a <- a - b
+
+   Swap
+      Description: adjust a back to positive and then swap with b so b
+                   is always the smallest of the two values
+      Action:      a <- a + b
+                   a <-> b
+
+   HaveGCD
+      Description: have computed the GCD, store it for return
+      Action:      GCD <- b
+
+   Done:
+      Description: have the GCD, done with the computation
+      Action:      nothing
+
+
+Step Transitions:
+
+             (a > 0) & (b > 0)   a = 0    a < 0    otherwise
+CheckParams      Compute                           Done
+Compute          Compute        HaveGCD   Swap     Done
+Swap                                               Compute
+HaveGCD                                            Done
+Done                                               Done

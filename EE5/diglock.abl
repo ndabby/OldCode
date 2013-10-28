@@ -1,0 +1,208 @@
+MODULE      diglock
+TITLE      'Digital Lock'
+
+
+" diglock       DEVICE  'XC9536'
+
+
+" Description:  This implements a digital lock that unlocks the lock if the
+"               user turns the dial to the right past 00 twice then to 19 and presses Open.
+"               Under any other condition the lock is left locked.
+"               Provided they enter the secret code...
+
+" Revision History:
+" 05/02/07   Glen George  initial revision
+" 11/01/07   Glen George  updated comments
+" 11/05/07   Nadine Dabby implemented digital lock
+
+
+
+" Pins
+
+" Clock input
+
+Clock           pin  5;                 "clock input
+
+
+" General inputs
+
+Mode            pin 24;                 "input   Mode (not needed)
+
+
+" BCD dial position inputs
+
+BCD5            pin  1;                 "input   dial position, BCD digit 1, bit 1
+BCD4            pin  2;                 "input   dial position, BCD digit 1, bit 0
+BCD3            pin  3;                 "input   dial position, BCD digit 0, bit 3
+BCD2            pin  4;                 "input   dial position, BCD digit 0, bit 2
+BCD1            pin  8;                 "input   dial position, BCD digit 0, bit 1
+BCD0            pin  9;                 "input   dial position, BCD digit 0, bit 0
+
+" rotation direction
+
+Left            pin 11;                 "input   high is left, low is right
+
+
+" open input
+
+!Open           pin 22;                 "input   try to open lock (active low)
+
+
+" unlock output
+
+Unlock          pin 44   ISTYPE 'COM';  "output  open the lock
+
+
+" State Bits
+
+State7          pin 19   ISTYPE 'REG';  "output  state bit 7
+State6          pin 18   ISTYPE 'REG';  "output  state bit 6
+State5          pin 20   ISTYPE 'REG';  "output  state bit 5
+State4          pin 25   ISTYPE 'REG';  "output  state bit 4
+State3          pin 26   ISTYPE 'REG';  "output  state bit 3
+State2          pin 27   ISTYPE 'REG';  "output  state bit 2
+State1          pin 28   ISTYPE 'REG';  "output  state bit 1
+State0          pin 29   ISTYPE 'REG';  "output  state bit 0
+
+
+" Unconnected Pins
+
+"IO7            pin 12                   input/output
+"IO8            pin 13                   input/output
+"IO9            pin 14                   input/output
+"IO20           pin 33                   input/output
+"IO21           pin 34                   input/output
+"IO22           pin 35                   input/output
+"IO23           pin 36                   input/output
+"IO24           pin 37                   input/output
+"IO25           pin 38                   input/output
+"IO26           pin 43                   input/output
+
+"IOGTS1         pin 42                   input/output/output enable
+"IOGTS2         pin 40                   input/output/output enable
+"IOGSR          pin 39                   input/output/set/reset
+"IOGCK2         pin 6                    input/output/clock
+"IOGCK3         pin 7                    input/output/clock
+
+
+" Programming Pins (not available for use in the design
+
+"TCK            pin 17                   pgm     programming interface TCK
+"TDI            pin 15                   pgm     programming interface TDI
+"TDO            pin 30                   pgm     programming interface TDO
+"TMS            pin 16                   pgm     programming interface TMS
+
+
+" Power Pins
+
+"GND            pin 10                   supply  power ground
+"GND            pin 23                   supply  power ground
+"GND            pin 31                   supply  power ground
+"VCC            pin 21                   supply  power Vcc
+"VCC            pin 41                   supply  power Vcc
+"VCCIO          pin 32                   supply  power Vcc I/O
+
+
+" define the BCD inputs as a set
+DialBCD  =  [ BCD5, BCD4, BCD3, BCD2, BCD1, BCD0 ];
+
+" define the state bits
+StateBits  =  [ State7, State6, State5, State4, State3, State2, State1, State0 ];
+
+" define the states
+Idle             = [ 0, 0, 0, 0, 0, 0, 0, 0 ];     " waiting for input
+First00          = [ 0, 0, 0, 0, 0, 0, 0, 1 ];     " Passed Zero for the first time
+Pass00           = [ 0, 0, 0, 0, 0, 0, 1, 1 ];
+Second00         = [ 0, 0, 0, 0, 0, 1, 1, 1 ];     " Passed Zero again
+FirstDigit       = [ 0, 0, 0, 0, 1, 1, 1, 1 ];     " got First digit
+PassFirstDigit   = [ 0, 0, 0, 1, 1, 1, 1, 1 ];     " Passed first digit
+SecondDigit      = [ 0, 0, 1, 1, 1, 1, 1, 1 ];     " got second digit
+ThirdDigit       = [ 0, 1, 1, 1, 1, 1, 1, 1 ];     " got third digit
+Unlocked         = [ 1, 1, 1, 1, 1, 1, 1, 1 ];     " code entered correctly and unlocked
+
+
+EQUATIONS
+
+
+" clocks for the state bits
+StateBits.CLK  =  Clock;
+
+
+STATE_DIAGRAM  StateBits        " a Moore state machine
+
+
+STATE  Idle:                    " in the idle state waiting for 00
+
+   Unlock = 0;                  " not open
+
+   IF   ((!Left) & (DialBCD == ^H00)) THEN  First00 " rotated right to 00
+   ELSE                                     Idle; " otherwise just stay here
+
+STATE  First00:                    " in the first00 state waiting for 00
+
+   Unlock = 0;                  " not open
+
+   IF   ((!Left) & (DialBCD > ^H00)) THEN  Pass00 " rotated right to 00 again
+   ELSE IF (!Left)					  THEN  First00  "rotating...
+   ELSE                                     Idle; " otherwise startover
+
+STATE  Pass00:                    " in the pass00 state waiting for 00
+
+   Unlock = 0;                  " not open
+
+   IF   ((!Left) & (DialBCD == ^H00)) THEN  Second00 " rotated right to 00 again
+   ELSE IF (!Left)					  THEN  Pass00  "rotating...
+   ELSE                                     Idle; " otherwise startover   
+   
+STATE  Second00:                    " in the second00 state waiting for 00
+
+   Unlock = 0;                  " not open
+
+   IF   ((!Left) & (DialBCD == ^H19))    THEN  FirstDigit   "first digit entered. yay!
+   ELSE IF ((!Left) & (DialBCD == ^H00)) THEN  Second00     "spinning right
+   ELSE IF (!Left) 						 THEN  Second00     "Waiting for that digit
+   ELSE                                        Idle;        " otherwise startover
+
+ STATE  FirstDigit:                    " in the firstdigit state waiting to pass first digit from left
+
+   Unlock = 0;                  " not open
+
+   IF   ((Left) & (DialBCD == ^H19)) THEN  PassFirstDigit   " rotated left to 19 again
+   ELSE IF (Left)                     THEN  FirstDigit       " turning left but not there yet
+   ELSE                                    Idle;            " otherwise startover
+  
+STATE  PassFirstDigit:                    " in the passfirstdigit state waiting for second digit
+
+   Unlock = 0;                  " not open
+
+   IF   ((Left) & (DialBCD == ^H13)) 					  THEN  SecondDigit   " rotated right to 00 again
+   ELSE IF ((Left) & (DialBCD > ^H13) & (DialBCD < ^H19)) THEN PassFirstDigit "waiting for that second digit 
+   ELSE                                     Idle;      " otherwise startover
+   
+
+STATE  SecondDigit:                    " in the first00 state waiting for 00
+
+   Unlock = 0;                  " not open
+
+   IF   ((!Left) & (DialBCD == ^H35)) THEN  ThirdDigit " rotated right to 00 again
+   ELSE                                     Idle;      " otherwise startover
+
+STATE  ThirdDigit:                    " in the first00 state waiting for 00
+
+   Unlock = 0;                  " not open
+
+   IF   ((open) & (DialBCD == ^H35)) THEN  Unlocked 		" rotated right to 00 again
+   ELSE IF ((!open) & (DialBCD == ^H35)) THEN ThirdDigit 	"waiting to unlock
+   ELSE                                     Idle; 			" otherwise startover
+
+  
+STATE  Unlocked:                   " got the right code and unlocked, open the door
+
+   Unlock = Open;               " unlock the door if user wants it open
+
+   IF      (Left)            THEN  Idle " turning left - go back to idle state
+   ELSE IF (DialBCD != ^H35) THEN  Idle " off 00 - go back to idle state
+   ELSE                            Unlocked;" otherwise stay here
+
+
+END  diglock

@@ -1,0 +1,73 @@
+
+Task:         Digital Clock
+Description:  Compute and display the current time in a 24-hour display 
+              of hours and minutes. The colon between the hours and minutes 
+	      blinks on for one second and off for the next second (at 0.5 Hz).
+	      This is a condition based program. The program also utilizes the
+	      already defined tasks-- DisplayColon and DisplayTime.
+Initial Step: Start
+Final Step:   -----
+
+
+Variables:
+   MIN	      int[0, 59]
+	      records minutes elapsed in the current hour
+   HR	      int[0, 23]
+	      records hours elapsed in the current day
+   SEC	      int[0, 59]
+	      records seconds elapsed in current minute
+   ON	      logical 
+	      records whether the colon is on
+
+Events:
+   Timer1sElapsed(timeout:out)	The task determines whether a second has elapsed 
+				on the timer since the last time it was called. 
+				It takes a single output parameter (timeout) in 
+				which true is stored if one second has elapsed 
+				and in which false is stored otherwise. Once the 
+				task has given a value of true it will not yield 
+				a true value again until a second has elapsed.
+
+
+Steps:
+
+   Start
+      Description: 	Either the clock has just been turned on, and hence we 
+			start the calculation of time, or it is a new day. 
+			Initialize clock to 00:00
+      Action:      hr <- 00
+		   min <- 00
+		   sec <-00
+		   on <- 1
+                   PERFORM DisplayTime
+		   PERFORM DisplayColon
+
+   CountUp
+      Description: 	A second has passed, increment seconds
+      Action:      sec <- sec + 1
+		   PERFORM DisplayTime
+		   PERFORM DisplayColon
+
+
+   NewMinute
+	Description: 	A minute has passed, increment minutes
+	Action:	   sec <- 00
+		   min <- min + 1
+   		   PERFORM DisplayTime
+		   PERFORM DisplayColon
+
+   NewHour
+	Description: 	An hour has passed, increment hours
+	Action:	   sec <- 00
+		   min <- 00
+		   hr <- hr + 1
+   		   PERFORM DisplayTime
+		   PERFORM DisplayColon
+
+Step Transitions:
+
+           Timer1sElapsed    	sec > 59    	min > 59	hr>23      
+Start  	 	CountUp	    	
+CountUp		CountUp	    	NewMinute	NewHour		Start  
+NewMinute	CountUp		
+NewHour		CountUp		

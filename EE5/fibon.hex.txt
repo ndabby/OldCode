@@ -1,0 +1,63 @@
+; This program computes the nth Fibonacci number.  The nth Fibonacci number
+; is defined recursively as:
+;       f[n] = f[n-1] + f[n-2] for n >= 2 and
+;       f[0] = f[1] = 1
+; The value is n is stored in memory in the variable n and at the end of the
+; program the nth Fibonacci number is stored in memory in the variable f.  The
+; value of n is destroyed by the program.  Note that there is no error
+; checking on the value of n and values of n larger than 12 (decimal) will
+; cause an overflow and generate incorrect results.
+;
+; Revision History
+;     3 Nov 07  Glen George      Initial revision.
+;     7 Nov 07  Glen George      Updated comments and formatting.
+
+
+  ; 00  start:				;initialize variables
+BA; 00          ST    f2		;f2 = 0 (acc starts at 0)
+71; 01          ADD   ONE		;acc = 1
+B9; 02          ST    f1		;f1 = 1
+B8; 03          ST    f 		;initial Fibonacci number is 1 too
+  ; 04  FibLoop:			;loop, computing nth Fibonacci number
+30; 04          NAND  ZERO		;acc = -1
+7B; 05          ADD   n			;compute n - 1
+D5; 06          JNC   Done		;if no carry (n was 0, we're done)
+  ; 07  FibBody:
+BB; 07          ST    n			;otherwise store the new value of n
+30; 08          NAND  ZERO		;get the value of f1 in accumulator
+39; 09          NAND  f1		;   acc = not f1
+32; 0A          NAND  ONES		;   acc = f1
+7A; 0B          ADD   f2		;compute new fibonacci number
+B8; 0C          ST    f			;and store it
+B9; 0D          ST    f1		;also store it in f1 for next calc
+30; 0E          NAND  ZERO		;get -f2 in accumulator
+3A; 0F          NAND  f2		;   acc = not f2
+71; 10          ADD   ONE		;   acc = not f2 + 1 = -f2
+78; 11          ADD   f			;gets back old value of f1 (f - f2)
+BA; 12          ST    f2		;store it in f2 for next iteration
+C4; 13          JNC   FibLoop		;unconditionally loop
+C4; 14          JNC   FibLoop
+  ; 15  Done:				;done with the calculation
+D5; 15          JNC   Done		;just loop here
+
+00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+
+;Constants
+
+00; 30  ZERO    DB    0
+01; 31  ONE     DB    1
+FF; 32  ONES    DB    FF		;all set bits
+
+00 00 00 00 00
+
+;Variables
+
+AA; 38  f       DB    ?			;the current Fibonacci number
+AA; 39  f1      DB    ?			;the Fibonacci number from last time
+AA; 3A  f2      DB    ?			;the Fibonacci number from 2 times ago
+AA; 3B  n       DB    ?			;the desired Fibonacci number index
+
+00 00 00 00

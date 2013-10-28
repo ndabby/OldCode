@@ -1,0 +1,153 @@
+MODULE      deccntr
+TITLE      'Up/Down Decade Counter'
+
+
+" deccntr       DEVICE  'XC9536'
+
+
+" Description:  This is the template for a 3-Digit Up/Down Decade Counter
+"               for EE 5, Homework #2.
+
+
+" Revision History:
+" 04/17/07   Glen George  Initial Revision
+" 10/13/07   Glen George  Changed CountUp pin to be called CountDown (its
+"                         active high meaning)
+" 10/13/07   Glen George  Updated comments
+
+
+
+" Pins
+
+" Inputs
+
+Mode		pin  1;			"input   Mode (not needed)
+CountDown	pin  9;			"input   Up/Down input (high for Down)
+
+
+" Counter Outputs
+
+Q11		pin 24   ISTYPE 'REG';  "output BCD digit 2, bit 3
+Q10		pin 25   ISTYPE 'REG';  "output BCD digit 2, bit 2
+Q9		pin 26   ISTYPE 'REG';  "output BCD digit 2, bit 1
+Q8		pin 27   ISTYPE 'REG';  "output BCD digit 2, bit 0
+Q7		pin 29   ISTYPE 'REG';  "output BCD digit 1, bit 3
+Q6		pin 33   ISTYPE 'REG';  "output BCD digit 1, bit 2
+Q5		pin 34   ISTYPE 'REG';  "output BCD digit 1, bit 1
+Q4		pin 35   ISTYPE 'REG';  "output BCD digit 1, bit 0
+Q3		pin 37   ISTYPE 'REG';  "output BCD digit 0, bit 3
+Q2		pin 38   ISTYPE 'REG';  "output BCD digit 0, bit 2
+Q1		pin 43   ISTYPE 'REG';  "output BCD digit 0, bit 1
+Q0		pin 44   ISTYPE 'REG';  "output BCD digit 0, bit 0
+
+
+" Clock Input
+
+Clock           pin 5;			"input   clock
+
+
+" Unconnected Pins
+
+"IO1		pin 2                    input/output
+"IO2		pin 3                    input/output
+"IO3		pin 4                    input/output
+"IO4		pin 8                    input/output
+"IO6		pin 11                   input/output
+"IO7		pin 12                   input/output
+"IO8		pin 13                   input/output
+"IO9		pin 14                   input/output
+"IO10		pin 18                   input/output
+"IO11		pin 19                   input/output
+"IO12		pin 20                   input/output
+"IO13		pin 22                   input/output
+"IO18		pin 28                   input/output
+"IO23		pin 36                   input/output
+
+"IOGTS1		pin 42                   input/output/output enable
+"IOGTS2		pin 40                   input/output/output enable
+"IOGSR		pin 39                   input/output/set/reset
+"IOGCK2		pin 6                    input/output/clock
+"IOGCK3		pin 7                    input/output/clock
+
+
+" Programming Pins (not available for use in the design
+
+"TCK		pin 17                   pgm     programming interface TCK
+"TDI		pin 15                   pgm     programming interface TDI
+"TDO		pin 30                   pgm     programming interface TDO
+"TMS		pin 16                   pgm     programming interface TMS
+
+
+" Power Pins
+
+"GND		pin 10                   supply  power ground
+"GND		pin 23                   supply  power ground
+"GND		pin 31                   supply  power ground
+"VCC   		pin 21                   supply  power Vcc
+"VCC   		pin 41                   supply  power Vcc
+"VCCIO 		pin 32                   supply  power Vcc I/O
+
+
+" Intermediate Terms
+
+" if you have any intermediate terms in your equations they need to be
+" declared here as:
+" Signal_name   node;
+
+
+
+" Macros
+
+" if you have any macros (equations which are not pins or nodes, but just a
+" shorthand notation) they need to be defined here as:
+" Macro_name = equation;
+
+
+
+EQUATIONS
+
+
+" clocks for all of the BCD counter bits
+
+Q11.CLK  =  Clock;                      " use the global clock pin
+Q10.CLK  =  Clock;                      " use the global clock pin
+Q9.CLK   =  Clock;                      " use the global clock pin
+Q8.CLK   =  Clock;                      " use the global clock pin
+Q7.CLK   =  Clock;                      " use the global clock pin
+Q6.CLK   =  Clock;                      " use the global clock pin
+Q5.CLK   =  Clock;                      " use the global clock pin
+Q4.CLK   =  Clock;                      " use the global clock pin
+Q3.CLK   =  Clock;                      " use the global clock pin
+Q2.CLK   =  Clock;                      " use the global clock pin
+Q1.CLK   =  Clock;                      " use the global clock pin
+Q0.CLK   =  Clock;                      " use the global clock pin
+
+
+" all of your equations for the BCD counter outputs go here in the form:
+"    Qn := equation;
+
+Q0 := !Q0;
+Q1 := (CountDown & ((!Q3 & Q2 & !Q1 & !Q0) # (Q1 & Q0) # (Q3 & !Q1 & !Q0))) # (!CountDown & ((!Q3 & Q0 & !Q2) # (Q1 & !Q0)));
+Q2 := (CountDown & ((Q2 & (Q1 # Q0)) # (Q3 & !Q1 & !Q0))) # (!CountDown & ((Q2 ^ (!Q1 # !Q0)) # (!Q2 & Q1 & Q0)));
+Q3 := (CountDown & ((!Q3 & !Q2 & !Q1 & !Q0) # (Q3 & !Q1 & !Q0)) # (!CountDown & ((Q3 & !Q1 & !Q0) # (Q2 & Q1 & Q0)));
+Q4 := (CE1 & !Q4) # (!CE1 & Q4);
+Q5 := (!CE1 & Q5) # (CE1 & (CountDown & ((!Q7 & Q6  & !Q5 & !Q4) # (Q5 & Q4) # (Q7 & !Q5 & !Q4))) # (!CountDown & ((!Q7 & Q4 & !Q6) # (Q5 & !Q4))));
+Q6 := (!CE1 & Q6) # (CE1 & ((CountDown & ((Q6 & (Q5 # Q4)) # (Q7 & !Q5 & !Q4))) # (!CountDown & ((Q6 ^ (!Q5 # !Q4)) # (!Q6 & Q5 & Q4)))));
+Q7 := (!CE1 & Q3) # ( CE1 & (CountDown & ((!Q3 & !Q2 & !Q1 & !Q0) # (Q3 & !Q1 & !Q0)) # (!CountDown & ((Q3 & !Q1 & !Q0) # (Q2 & Q1 & Q0)))));
+Q8 := (CE2 & !Q8) # (!CE2 & Q8);
+Q9 := (!CE2 & Q9) # (CE2 & (CountDown & ((!Q11 & Q10  & !Q9 & !Q8) # (Q9 & Q8) # (Q11 & !Q9 & !Q8))) # (!CountDown & ((!Q11 & Q8 & !Q10) # (Q9 & !Q8))));
+Q10 := (!CE2 & Q10) # (CE2 & ((CountDown & ((Q10 & (Q9 # Q8)) # (Q11 & !Q9 & !Q8))) # (!CountDown & ((Q10 ^ (!Q9 # !Q8)) # (!Q10 & Q9 & Q8)))));;
+Q11 := (!CE2 & Q11) # (CE2 & (CountDown & ((!Q3 & !Q2 & !Q1 & !Q0) # (Q3 & !Q1 & !Q0)) # (!CountDown & ((Q3 & !Q1 & !Q0) # (Q2 & Q1 & Q0))));
+
+
+" also all the intermediate term equations go here as well, typically of
+" the form:
+"    signal_name = equation;
+
+" CE1 = count enable 1
+" CE2 = Count enable 2
+
+CE1 = (CountDown & !Q3 ^ !Q2 ^ !Q1 ^ !Q0) # (!CountDown & Q0 & Q3); 
+CE2 = (CountDown & !Q7 ^ !Q6 ^ !Q5 ^ !Q4) # (!CountDown & Q4 & Q7); 
+
+END  deccntr

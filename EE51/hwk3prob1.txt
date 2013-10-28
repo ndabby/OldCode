@@ -1,0 +1,41 @@
+Init:
+	MOV DS:[BP], E	; declare E
+	MOV DS:[BP + 4], F	; declare F
+
+IfLoop:
+	
+	CMP DS:[BP + 4], 0 
+	JL  ElseCase
+	MOV BX, 0
+	JMP WhileLoop
+
+ElseCase:
+	NEG CX
+	MOV AX, CX
+	MOV DI, DX
+	MOV DX, 0
+	DIV DS:[BP+4]
+	MOV DX, DI
+	IMUL BX, AX, 22
+	JMP WhileLoop
+
+WhileLoop:
+	CMP DS:[BP], 5
+	XOR S, L
+	MOV DI, S
+	CMP BX, 7
+	XOR S, L
+	MOV SI, S
+	AND DI, SI
+	CMP DI, 0
+	JE EndWhile
+	DEC [DS:]
+	SUB BX, DX
+	JMP WhileLoop
+
+
+
+EndWhile:
+
+	ADD BX, DS:[BP]
+	MOV DX, BX

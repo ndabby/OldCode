@@ -1,0 +1,22 @@
+OBJECTS=glFunctions.o main.o
+CFLAGS=-g -O1 -Wall
+LDFLAGS=-L/usr/X11R6/lib -lgle -lglut -lGLU -lGL -lm -lXmu -lX11 -lgle -lXi -lXt
+GLE_LIB_LINK=/bin/sh gle-3.1.0/libtool
+GLE_ARGS=--mode=link
+
+all: test
+
+test: $(OBJECTS)
+	$(GLE_LIB_LINK) $(GLE_ARGS) g++ $(CFLAGS) -o testProg $^ $(LDFLAGS)
+
+clean:
+	rm *.o
+
+.c.o: *.h
+	g++ -c $(CFLAGS) -o $@ $<
+
+.cpp.o: *.h
+	g++ -c $(CFLAGS) -o $@ $<
+
+.PHONY: all clean
+

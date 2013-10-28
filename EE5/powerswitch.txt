@@ -1,0 +1,159 @@
+Task:         	Power Switch
+
+Description:  	The switch (for a battery-powered system) consists of circuitry to control the power
+		of the system, one switch, and two LEDs (one red and one green) that indicate the 
+		system status. The power is initially off. When the switch is pressed, the power is 
+		turned on for two minutes and the green LED is continuously on (after 90 seconds, the
+		the green LED blinks, after 15 more seconds the the green LED goes off and the red LED 
+		blinks (1 hz). After 10 more seconds the red LED blinks faster (2 hz), and after 5 
+		more seconds the power is turned off as are both LEDs. If at any time the switch is 
+		pressed for less than 2 seconds, the two minute timer is restarted. If the switch is
+		pressed for 2 seconds or longer, the the green LED is immediately shut off and the red 
+		LED will blink at 2Hz for 3 seconds before the entire system is turned off. (Another 
+		key press within those three seconds will reset the power and leave the system on for 
+		another two minutes).
+		The program is written as an event-based where the system generates events when the switch is 			
+		pushed, released, and every time 250 milliseconds pass. The program also makes use of the following
+ 		available tasks:
+		
+		Power(on:in)		The task takes a single input parameter (on) which is a logical value. 
+					If true the system power is turned on and if false it is turned off.
+		DisplayRedLED(on:in)	The task takes a single input parameter (on) which is a logical value. If 									true the red LED is turned on and if false it is turned off.
+		DisplayGreenLED(on:in)	The task takes a single input parameter (on) which is a logical value. 
+					If true the green LED is turned on and if false it is turned off.
+
+Author:		Nadine Dabby
+
+Revision History:	Task description by Glen George Nov. 21, 2007
+			Program written by Nadine Dabby on Nov. 26, 2007
+			Description, program revised by Nadine Dabby on Nov. 27, 2007
+
+Initial Step: Start
+Final Step:   -----
+
+
+Variables:
+on		logical
+		the state of the power
+red		logical
+		the state of the red LED
+green		logical
+		the state of the green LED
+PressTime	integer [0, 2000]
+		length of time for which button is continuously pressed 
+CycleZeroTime	integer [0, 90000]
+		length of time in step CycleZero 
+CycleOneTime	integer [0, 15000]
+		length of time in step CycleOne
+CycleTwoTime	integer [0, 10000]
+		length of time in step CycleTwo
+CycleThreeTime	integer [0, 5000]
+		length of time in step CycleThree
+QSDTime		integer [0, 3000]
+		length of time in step QuickShutDown
+   
+Events:
+Timer250msEvent	The event is generated every 250 milliseconds (four times per second) by the timer.
+KeyPressEvent	The event is generated every time the switch is pressed.
+KeyReleaseEvent	The event is generated every time the switch is released.
+
+Steps:
+
+   Start
+      	Description: 	Idle off state, waiting for a key press event. 
+			Power switch and both LEDs are turned off and all time buffers are
+			reset to 0.
+
+      	Action:      	on <- 0
+			red <-0
+			green <-0
+			CycleZeroTime <- 0
+			CycleOneTime <- 0
+			CycleTwoTime <- 0
+			CycleThreeTime <- 0
+			QSDTime <- 0
+			PressTime <-0
+			PERFORM Power(on)
+			PERFORM DisplayRedLED(red)
+			PERFORM DisplayGreenLED(green)
+
+   Initialize
+	Description: 	The timer has just been restarted, so power is turned on and the green 
+			light is on. PressTime is reset to zero if we arrive at this step from
+			a step other than Start.
+
+	Action:		on <- 1
+			green <- 1
+			PressTime <- 0
+			PERFORM Power(on)
+			PERFORM DisplayGreenLED(green)
+
+
+
+   CycleZero
+	Description: 	Counting to 90,000 milliseconds, when we will move to a powering down 
+			state. 
+
+	Action:		Cycle0Time <- Cycle0Time +o 250
+
+
+   CycleOne
+	Description:	Counting to 15,000 milliseconds, when we will move to the next power 
+			down state. Green light blinks once per second.
+
+	Action:		Cycle1Time <- Cycle1Time +o 250
+			green <- ((Cycle1Time % 1000) = 0)
+			PERFORM DisplayGreenLED(green)
+
+   CycleTwo
+	Description:	Counting to 10,000 milliseconds, when we will move to the last power 
+			down state. Green light is turned off and the red light blinks once 
+			per second.
+
+	Action:		green <- 0
+			Cycle2Time <- Cycle2Time +o 250
+			red <- ((Cycle2Time % 1000) = 0)
+			PERFORM DisplayRedLED(red)
+			PERFORM DisplayGreenLED(green)
+   CycleThree
+	Description:	Counting to 5,000 milliseconds before shutting down.
+			The red light blinks twice per second.
+
+	Action:		Cycle3Time <- Cycle3Time +o 250
+			red <- ((Cycle3Time % 500) = 0)
+			PERFORM DisplayRedLED(red)
+   QuickShutDown
+	Description:	Counting to 3,000 milliseconds before moving to off state.
+			The green light is turned off and the red light blinks twice per
+			second. 
+
+	Action:		QSDTime <- QSDTime + 250
+			green <- 0
+			red <- ((QSDTime % 500) = 0)	
+			PERFORM DisplayRedLED(red)
+			PERFORM DisplayGreenLED(green)
+   KeyPressed
+	Description: 	Key has been pressed, so we count up to 2000 milliseconds before 
+			moving to quick shut down mode. 
+			The green light is turned on and the red light is turned off.
+
+	Action:		PressTime <- PressTime +o 250
+			green <- 1
+			red <- 0
+			PERFORM DisplayRedLED(red)
+			PERFORM DisplayGreenLED(green)			
+
+
+Step Transitions:
+
+		Timer250msEvent		KeyPressEvent		KeyReleaseEvent		OverFlow	
+
+Start  	    	Start			Initialize
+Initialze	CycleZero		KeyPressed					
+CycleZero	CycleZero		KeyPressed					CycleOne
+CycleOne	CycleOne		KeyPressed					CycleTwo
+CycleTwo	CycleTwo		KeyPressed					CycleThree
+CycleThree	CycleThree		KeyPressed					Start
+QuickShutDown	QuickShutDown		Initialize					Start
+KeyPressed	KeyPressed		KeyPressed		Initialize		QuickShutDown	
+	 

@@ -1,0 +1,72 @@
+Task:         Saturating Counter
+Description:  Increment and/or decrement a counter between two limit values.
+              If the count goes above or below the limit values (999 and 0),
+              it saturates at the limit value.  Thus incrementing from the
+              maximum value leaves it at the maximum value and decrementing
+              from the minimum value leaves it at the minimum value.  The
+              counter is initialized to the middle value (500) when the task
+              begins.  Note that the counter will momentarily display an
+              incorrect value after it goes out of range.  The duration should
+              be short enough so the incorrect value is never seen.
+Initial Step: Start
+Final Step:   -----
+
+
+Variables:
+   countValue  int[0, 999]
+               current value of the counter, the range is the range of the
+               counter
+
+
+Events:
+   CountDownEvent  the counter should count down by 1
+   CountUpEvent    the counter should count up by 1
+
+
+Steps:
+
+   Start
+      Description: start the counter, just initialize it to a middle value
+      Action:      countValue <- 500
+                   PERFORM  DisplayDecimal(countValue)
+
+   CountDown
+      Description: dounting down, decrement the counter watching for overflow
+      Action:      countValue--o
+                   PERFORM  DisplayDecimal(countValue)
+
+   CountUp
+      Description: counting up, increment the counter watching for overflow
+      Action:      countValue++o
+                   PERFORM  DisplayDecimal(countValue)
+
+   SaturateHigh
+      Description: counter has overflowed counting up, saturate at maximum
+                   value
+      Action:      countValue <- 999
+                   PERFORM  DisplayDecimal(countValue)
+
+   SaturateLow
+      Description: counter has overflowed counting down, saturate at minimum
+                   value
+      Action:      countValue <- 0
+                   PERFORM  DisplayDecimal(countValue)
+
+
+Step Transitions:
+
+             CountDownEvent    CountUpEvent    OverflowEvent    Always
+Start          CountDown         CountUp
+CountDown      CountDown         CountUp        SaturateLow
+CountUp        CountDown         CountUp        SaturateHigh
+SaturateLow    CountDown         CountUp
+SaturateHigh   CountDown         CountUp
+
+
+An alternative Transition table is:
+
+             CountDownEvent    CountUpEvent    OverflowEvent    Always
+Start          CountDown         CountUp
+CountDown      CountDown         CountUp         CountUp
+CountUp        CountDown         CountUp         CountDown
+

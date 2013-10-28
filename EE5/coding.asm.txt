@@ -1,0 +1,88 @@
+;below are a number of code examples for doing simple operations on
+;the Micro Microprocessor
+
+
+;Revision History
+;    3 Nov 07   Glen George        initial revision
+;    7 Nov 07   Glen George        updated comments
+
+
+
+;the examples use the following constants
+ZERO    DB    0			;all bits 0
+ONES    DB    FF                ;all bits 1
+ONE     DB    1			;the value 1
+
+
+;the examples use the following variables
+var     DB    ?			;any variable
+var2    DB    ?			;any other variable
+temp    DB    ?			;temporary storage
+
+
+
+;clear the accumulator
+	NAND  ZERO		;acc = FF
+	NAND  ONES		;acc = 0
+
+
+;set the accumulator
+	NAND  ZERO		;acc = FF
+
+
+;invert the accumuator
+	NAND  ONES		;acc = NOT acc
+
+
+;negate the accumulator
+	NAND  ONES		;acc = NOT acc
+	ADD   ONE		;acc = NOT acc + 1 = -acc
+
+
+;load a variable into the accumulator
+	NAND  ZERO		;acc = FF
+	NAND  var		;acc = NOT var
+	NAND  ONES		;acc = var
+
+
+;check accumulator for 0 (destructive)
+	ADD   ONES		;acc = acc + FF
+	JNC   HaveZero		;jumps if accumlator was zero
+
+
+;clear the carry flag
+	JNC   Next		;jump to next instrution, clears carry
+Next:
+
+
+;logical AND of accumulator with a variable
+	NAND  var		;logical NAND
+	NAND  ONES		;invert it to get AND
+
+
+;logical OR of accumulator with a variable
+	NAND  ONES		;invert the accumulator
+	ST    temp		;store it for later
+	NAND  ZERO		;acc = FF
+	NAND  var		;acc = NOT var
+	NAND  temp		;acc = NOT (NOT var AND NOT acc) = var OR acc
+
+
+;subtract two variables (var - var2)
+	NAND  ZERO		;acc = FF
+	NAND  var2		;acc = NOT var2
+	ADD   ONE		;acc = NOT var2 + 1 = -var
+	ADD   var		;acc = var - var2
+
+
+;swap var and var2
+	NAND  ZERO		;acc = FF
+	NAND  var		;acc = NOT var
+	ST    temp		;temp = NOT var
+	NAND  ZERO		;acc = FF
+	NAND  var2		;acc = NOT var2
+	NAND  ONES		;acc = var2
+	ST    var		;var = var2
+	NAND  ZERO		;acc = FF
+	NAND  temp		;acc = NOT temp = NOT NOT var = var
+	ST    var2		;var2 = var
