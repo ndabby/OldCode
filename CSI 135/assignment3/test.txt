@@ -1,0 +1,14 @@
+start 200.00 
+new apple pome 
+new pear pome
+new orange citrus
+new garlic onion
+new lemon citrus
+new broccoli stalk
+buy apple pome 100 0.89
+buy orange citrus 50 0.57
+buy garlic onion 500 0.29
+sell orange citrus 10 0.69
+total cash
+buy pear pome 100 1.29
+print citrus

@@ -1,0 +1,17 @@
+function [] = oneplots(data, w, th)
+
+err = 0.0;
+%display(data(:, 20)), drawnow;
+subplot(5, 2, 1) 
+dude = oneerror(data, w, th, err);
+
+subplot(5, 2, 2) 
+dudette = oneerrorrand(w, th, err);
+
+subplot(5, 2, 3) 
+dude = oneerror(data, w, th, err);
+
+subplot(5, 2, 2) 
+dudette = oneerrorrand(w, th, err);
+%subplot(1, 3, 3) 
+%display(dudette(:, 20)), drawnow;

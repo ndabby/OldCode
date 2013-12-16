@@ -1,0 +1,31 @@
+function [w, yarray, counter, theta] = learn(P, D) % w, theta, D)
+%while all are not correctly classified
+
+%D = [1; -1; -1; -1; 1; 1; 1; 1; -1; 1; 1] %sample partition
+theta = 0           %threshold is zero for now
+w = ones(900, 1)    %initialize w to ones
+
+counter = 0
+cont = 1
+yarray = zeros(11, 1)
+while (cont == 1 & counter < 5000)
+    for i = 1:11
+        yarray(i) = classify(w, P(:, i), theta);
+    end
+    if(yarray == D) 
+        cont = 0; %stop while loop
+    else   %if y not equal to d pick a random pattern  
+        pick = floor(11*rand(1,1))+ 1; %get a number from 1-11
+        x = P(:, pick);               %store pattern into x
+        y = classify(w, x, theta);
+        if y == D(pick) 
+            ;
+        else
+            w = w+ D(pick)*x;
+            theta = theta - D(pick); 
+        end
+    end
+    counter = counter + 1
+end
+
+

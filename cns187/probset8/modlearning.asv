@@ -1,0 +1,54 @@
+function [w, th, Ma, y, D, test] = modlearning(Pat) 
+D = zeros(825, 20);
+for i = 1:19
+    D(:, i) = Pat(:, (i+1)); 
+end
+D(:, 20) = Pat(:, 1);
+
+P = Pat;
+
+%while all are not correctly classified
+Ma = zeros(1, 825);
+th = zeros(1, 825);
+that = zeros(1, 825);
+w = zeros(825, 825);    
+y = zeros(825, 20);
+counter = 0;
+for j = 1:825
+    hope = zeros(825, 1);
+    m = 0;
+    theta = 0; %0.2*m - sum(hope); 
+
+    %counter
+    counter = 0;
+    cont = 1;
+    while (cont == 1 & counter < 10000)
+
+        %if y not equal to d pick a random pattern
+        pick = floor(20*rand(1,1))+ 1; %get a number from 1-20
+        x = P(:, pick);               %store pattern into x
+        y(j, pick) = classify(hope, x, theta);
+        if y(j, pick) == D(j, pick)
+            ;
+        else
+            hope = hope + x*(D(j,pick)- y(j, pick))';    
+            hope(j) = 0;
+            m = sum(hope.*(hope>0)); %calculate with What = 2*hope
+            theta = 0.2*m - sum(hope); %theta - D(j, pick);
+        end
+        counter = counter + 1;        
+        if sum(y(j, :) == D(j, :)) == 20;
+            cont = 0;
+        end
+    end
+    m = sum(hope.*(hope>0)); %calculate with What = 2*hope
+    w(:, j) = hope;
+    th(j) = theta;
+    that(j) = theta + sum(hope);
+    Ma(j) = m;
+end
+
+w = w';
+test = that - (Ma./10);
+%hist(test)
+%need to transpose weights to run

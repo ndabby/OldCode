@@ -1,0 +1,27 @@
+start 200
+Cash has been initialized to $200.
+new apple pome
+apple of type pome has been added.
+new pear pome
+pear of type pome has been added.
+new orange citrus
+orange of type citrus has been added.
+new garlic onion
+garlic of type onion has been added.
+new lemon citrus
+lemon of type citrus has been added.
+new broccoli stalk
+broccoli of type stalk has been added.
+buy apple(s) pome 100 0.89
+100 apple(s) purchased at 0.89 for $89. New cash balance is $111.
+buy orange(s) citrus 50 0.57
+50 orange(s) purchased at 0.57 for $28.5. New cash balance is $82.5.
+buy garlic(s) onion 500 0.29
+Cannot perform this transaction, not enough cash.
+sell orange citrus 10 0.69
+10 orange(s) sold at 0.69 for $6.9. New cash balance is $89.4.
+buy pear(s) pome 100 1.29
+Cannot perform this transaction, not enough cash.
+print citrus
+orange citrus 40
+lemon citrus 0

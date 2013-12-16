@@ -1,0 +1,45 @@
+function [Icurrent, freq, freqsec, Isec] = oneplots()
+
+I = zeros(1, 100);
+freq = zeros(1, 100);
+
+
+R = 1.0e8;
+C = 2.0e-10;
+Vrest = -0.065;
+Vthr = -0.050;
+Vreset = -0.070;
+tref = 0.005;
+
+[Icurrent] = halfmaxcurrent(Vthr, Vrest, Vreset, tref, R, C)
+Icurrent = Icurrent/100
+
+for x = 1:100
+    I(x)= x*(Icurrent);
+end
+
+
+[freq] = derived(I);
+
+plot(I, freq)
+hold
+
+Isec = zeros(5000, 100);
+for y = 1:5000
+    Isec(y, :) = I(1, 1:100);
+end
+freqsec = zeros(1, 100);
+
+for z = 1: 100
+    [s, v] = myIaF(Isec(:,z));
+    freqsec(z) = sum(s);
+end
+freqsec = freqsec./5
+plot(Isec, freqsec), 
+  
+for z = 1: 100
+    [s, v] = myIaFnoisy(Isec(:,z));
+    freqsec(z) = sum(s);
+end
+freqsecb = freqsec./5
+plot(Isec, freqsecb)

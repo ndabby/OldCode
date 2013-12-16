@@ -1,0 +1,11 @@
+function [w]= plu(pats)
+w = zeros(100, 100);
+while counter <1000 
+    si = sign(w*pat(:, a))
+    sj = sign(w*pat(:, a))
+    dw = pat(:,a)*(pat(:,a) - si)'
+    dw = dw - diag(diag(dw));
+    w = w + dw + dw' 
+    counter = counter + 1
+end
+

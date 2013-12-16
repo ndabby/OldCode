@@ -1,0 +1,59 @@
+function [ newW, newV, Ehist, Etrain, beste] = earlystop(X, D, Xv, Dv, W, V, dt,iters)
+
+ N = size(X,2);
+ Xp = [ -ones(1,N); X ];
+ Ehist=zeros(1,iters);
+ Etrain=zeros(1,iters);
+  
+ Z = 1./(1+exp(-W * Xp))
+ Zp = [ -ones(1,N); Z]; 
+ %t = 0;
+ alpha = 0.01;
+ beta = 0.1;
+ 
+ vcol = size(V,2);
+ 
+ lowest = 100;
+  
+ for i=1:iters
+    Z = 1./(1+exp(-W * Xp))
+    Zp = [ -ones(1,N); Z]; 
+    Y = 1./(1+exp(-V * Zp));
+    eY = (Y-D).*Y.*(1-Y);
+    Vp = V(:, 2:vcol);
+    eZ = (Vp'*eY).*(Z.*(1-Z));
+    dEdV = eY*Zp';
+    dEdW = eZ*Xp';
+    Ehist(i) = sum(sum( (Y-D).^2 )) / 2 / N ;
+    
+    XpV = [ -ones(1,N); Xv ];
+    ZV = 1./(1+exp(-W * XpV));
+    ZpV = [ -ones(1,N); ZV]; 
+    YV = 1./(1+exp(-V * ZpV));
+    Etrain(i) = sum(sum( (YV-Dv).^2 )) / 2 / N ;
+    if Etrain(i)< lowest
+        newW = W;
+        newV = V;
+        beste = Etrain(i);
+    end
+
+    W = W - dt * dEdW;
+    V = V - dt * dEdV;
+    
+    if i > 1
+        dE = Ehist(i) - Ehist(i-1);
+    
+        if dE < 0
+            dt = dt +alpha;
+        else if dE > 0
+            dt = dt - (beta * dt);
+            end
+        end
+        if dE == 0;
+            dt = 0;
+        end 
+    end
+    dtHist(i) = dt;
+ end
+
+

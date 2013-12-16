@@ -1,0 +1,44 @@
+function [w, yarray, counter] = learning(Pat) 
+D = zeros(825, 20);
+for i = 1:19
+    D(:, i) = Pat(:, (i+1)); 
+end
+D(:, 20) = Pat(:, 1);
+
+P = [Pat; -ones(1, 20)];
+
+
+%while all are not correctly classified
+
+w = zeros(826, 825);    
+counter = 0;
+cont = 1;
+yarray = zeros(825, 20);
+
+for j = 1:825
+    hope = zeros(826, 1);
+    while (cont == 1 & counter < 500)
+        for i = 1:20
+            yarray(j, i) = classify(hope, P(:, i));
+            if yarray(j, i) == D(j, i)
+                ;
+            else   %if y not equal to d pick a random pattern
+                pick = floor(20*rand(1,1))+ 1; %get a number from 1-20
+                x = P(:, pick);               %store pattern into x
+                y(i, pick) = classify(hope, x);
+                if y(i, pick) == D(i, pick)
+                    ;
+                else
+                    hope = hope + x*(D(i,pick)');
+                    %w(1:825, :) = w(1:825, :) - diag(diag(w(1:825, :)));
+
+                end
+            end
+        end
+        if yarray(j, i) == D;
+ %           cont = 0;
+    end
+    w(:, i) = hope        
+    counter = counter + 1;
+end
+

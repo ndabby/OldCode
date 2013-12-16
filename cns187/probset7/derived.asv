@@ -1,0 +1,20 @@
+function [S, V] = derived(I)
+
+[m, n] = size(I);
+S = zeros(m, n);
+V = zeros(m, n);
+
+dt = 0.001;
+R = 1.0e8;
+C = 2.0e-10;
+Vrest = -0.065;
+Vthr = -0.050;
+Vreset = -0.070;
+tref = 0.005;
+
+
+    for i = 1:n 
+        tfire = -R*C*ln((Vthr-Vrest-R*I(i))/())
+    end
+end
+        
